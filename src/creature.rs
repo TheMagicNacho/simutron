@@ -55,8 +55,8 @@ impl Appendage {
 
     fn get_health(&self) -> i8 {
         let mut total_health: i8 = 100;
-        for (_, impact) in &self.effect_history {
-            total_health += impact;
+        for impact in &self.effect_history {
+            total_health += impact.1;
         }
         total_health
     }

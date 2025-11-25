@@ -1,188 +1,241 @@
-use std::fmt::Debug;
-use std::hash::{Hash, Hasher};
-use std::marker::PhantomData;
+use base_terrain::{MapBuilder, Tile};
+use forest::{ForestBuilder, ForestMaterial};
+use log::{debug, trace};
 
+mod base_terrain;
 mod creature;
+mod forest;
 
-pub trait Terrain: 'static + Debug + Clone + PartialEq {
-    type Material: 'static + Debug + Clone + PartialEq;
-    // fn default_material() -> Self::Material;
+#[derive(Debug, Clone, PartialEq)]
+pub struct PropActionReturn {
+    /// A vector of items that were removed from the prop and provided to the user. Item is destroyed if not handled.
+    returned_items: Vec<Prop>,
+    /// Returns a text description of the item in its current state.
+    inspection: String,
+    /// A list of items that were inspected within the prop.
+    inspected_items: Vec<Prop>,
 }
 
 #[derive(Debug, Clone, PartialEq)]
-enum Environments {
-    Forest,
-    Marsh,
-    Hills,
-    Mountains,
-    Urban,
-    Desert,
-    Plains,
-    Aquatic,
-    Dungeon,
-    Interior, // I think interior is separate from dungeon, but they might be the same.
+pub enum PropEffect {
+    /// Inspect the prop without modifying it.
+    Inspect,
+    /// Negatively change the prop's health.
+    Attack,
+    /// Positively change the prop's health.
+    Fix,
+    /// Take all the contents of the prop.
+    TakeAll,
+    /// Take specific content from the prop.
+    Take,
+    /// Place content into the prop.
+    Place,
+}
+
+#[derive(Debug, Clone, PartialEq)]
+struct PropAction {
+    /// Where the action is coming from.
+    pub from: String,
+    /// Where the action is going to.
+    pub to: String,
+    /// What effect is being applied.
+    pub effect: PropEffect,
+    /// The impact of the effect. Positive values heal/fix, negative values damage/take.
+    /// The value MUST match the effect type (i.e., positive for Fix, negative for Attack).
+    pub impact: i8,
+    /// Allows the passage of props as content between the actor and the prop.
+    /// When taking, the interface will return the taken items here.
+    /// When placing, the interface will provide the items to be placed here.
+    pub interface: Prop,
 }
 #[derive(Debug, Clone, PartialEq)]
-pub struct Tile<T: Terrain> {
-    pub material: T::Material,
-    pub is_blocking: bool,
-    pub is_opaque: bool,
-    /// base_luminance is the base amount of light on a tile.
-    /// Expressed as a value between 0 and 100
-    /// luminance can be modified during a run (ex. turning on a lamp)
-    pub base_luminance: u8,
-    _terrain: PhantomData<T>, // We don't store T, but need to mark it as used.
+struct Prop {
+    name: String,
+    description: String,
+    content: Vec<Prop>,
+    health: u8,
+    // height: u8,
+    // width: u8,
 }
 
-impl<T: Terrain> Tile<T> {
-    pub fn new(default_material: T::Material) -> Self {
-        Tile {
-            material: default_material,
-            is_blocking: false,
-            is_opaque: false,
-            base_luminance: 0,
-            _terrain: Default::default(),
+impl Prop {
+    fn new(
+        name: String,
+        description: String,
+        content: Vec<Prop>,
+        // height: u8,
+        // width: u8,
+    ) -> Self {
+        let health = 100; // Default health
+        Prop {
+            name,
+            description,
+            content,
+            health,
+            // height,
+            // width,
         }
     }
-    pub fn set_blocking(&mut self, is_blocking: bool) -> &mut Self {
-        self.is_blocking = is_blocking;
-        self
+
+    /// Inspects the prop, returning its description and contents.
+    /// Does not modify the prop.
+    fn inspect(&self) -> PropActionReturn {
+        let inspection = format!("{}: {}", self.name, self.description);
+        let inspected_items = self.content.clone();
+        let returned_items = vec![];
+        PropActionReturn {
+            inspection,
+            returned_items,
+            inspected_items,
+        }
     }
 
-    pub fn set_opaque(&mut self, is_opaque: bool) -> &mut Self {
-        self.is_opaque = is_opaque;
-        self
+    fn take_all(&mut self) -> PropActionReturn {
+        let returned_items = self.content.clone();
+        self.content.clear();
+        let inspection = format!("You took all items from the {}.", self.name);
+        let inspected_items = vec![];
+        PropActionReturn {
+            returned_items,
+            inspection,
+            inspected_items,
+        }
     }
-    pub fn set_base_luminance(&mut self, base_luminance: u8) -> &mut Self {
-        self.base_luminance = base_luminance;
-        self
+
+    fn attack(&mut self, action: PropAction) -> PropActionReturn {
+        if action.impact < 0 {
+            let damage = action.impact.abs() as u8;
+            self.health = self.health.saturating_sub(damage);
+        } else {
+            debug!("WARNING: Attack action impact is not negative.");
+            trace!("{:?}", action);
+        }
+        // Placeholder implementation
+        let inspection = format!(
+            "{} attacked the {}. Current health is {}",
+            action.from, self.name, self.health
+        );
+        let returned_items = vec![];
+        let inspected_items = vec![];
+        PropActionReturn {
+            returned_items,
+            inspection,
+            inspected_items,
+        }
     }
-}
 
-#[derive(Clone, PartialEq)]
-pub struct Map<T: Terrain> {
-    environment: Environments,
-    name: Option<String>,
-    description: Option<String>,
-    // Tiles are constant and persistent
-    tiles: Vec<Vec<Tile<T>>>,
-    // _terrain: PhantomData<T>,
-}
+    fn fix(&mut self, action: PropAction) -> PropActionReturn {
+        if action.impact > 0 {
+            let repair = action.impact as u8;
+            self.health = self.health.saturating_add(repair);
+        } else {
+            debug!("WARNING: Fix action impact is not positive.");
+            trace!("{:?}", action);
+        }
+        // Placeholder implementation
+        let inspection = format!(
+            "{} fixed the {}. Current health is {}",
+            action.from, self.name, self.health
+        );
+        let returned_items = vec![];
+        let inspected_items = vec![];
+        PropActionReturn {
+            returned_items,
+            inspection,
+            inspected_items,
+        }
+    }
 
-impl<T: Terrain> Debug for Map<T> {
-    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
-        let name = match &self.name {
-            Some(name) => name,
-            None => "Unnamed Map",
+    fn take(&mut self, action: PropAction) -> PropActionReturn {
+        let prop_index = self
+            .content
+            .iter()
+            .position(|p| p.name == action.interface.name);
+        let returned_items = if let Some(index) = prop_index {
+            vec![self.content.remove(index)]
+        } else {
+            vec![]
         };
-
-        let description = match &self.description {
-            Some(description) => description,
-            None => "No description provided.",
-        };
-
-        // TODO: make a tiles printer so its easier to visualize
-        write!(
-            f,
-            "Map: {:?}\nDescription: {:?}\n{:?}",
-            name, description, self.tiles
-        )
-    }
-}
-
-pub trait MapBuilder<T: Terrain> {
-    fn new(width: u32, height: u32, default_tile: Tile<T>) -> Self;
-    fn add_description(&mut self, description: String) -> &mut Self;
-    fn add_name(&mut self, map_name: String) -> &mut Self;
-    fn add_base_material(&mut self, x: u32, y: u32, tile: Tile<T>) -> &mut Self;
-    fn build(&self) -> Map<T>;
-}
-// Actual Environments (tsting with forest)
-#[derive(Clone, Debug, PartialEq)]
-pub enum ForestMaterial {
-    Soil,
-    Leaves,
-    Gravel,
-}
-
-#[derive(Clone, Debug, PartialEq)]
-pub struct Forest;
-
-impl Terrain for Forest {
-    type Material = ForestMaterial;
-}
-
-pub struct ForestBuilder {
-    tiles: Vec<Vec<Tile<Forest>>>,
-    map_name: Option<String>,
-    description: Option<String>,
-    environment: Environments,
-}
-// impl Map<Forest> {}
-
-impl MapBuilder<Forest> for ForestBuilder {
-    fn new(width: u32, height: u32, default_tile: Tile<Forest>) -> Self {
-        let default_row = vec![default_tile; width as usize];
-        let tiles = vec![default_row; height as usize];
-
-        let environment = Environments::Forest;
-
-        ForestBuilder {
-            tiles,
-            environment,
-            map_name: None,
-            description: None,
+        let inspection = format!(
+            "{} took an {} from the {}.",
+            action.from, action.interface.name, self.name
+        );
+        let inspected_items = self.content.clone();
+        PropActionReturn {
+            returned_items,
+            inspection,
+            inspected_items,
         }
     }
 
-    fn add_description(&mut self, description: String) -> &mut Self {
-        self.description = Some(description);
-        self
+    fn place(&mut self, action: PropAction) -> PropActionReturn {
+        let item_name = action.interface.name.clone();
+        self.content.push(action.interface);
+        let inspection = format!(
+            "{} placed an {} into the {}.",
+            action.from, item_name, self.name
+        );
+        let returned_items = vec![];
+        let inspected_items = self.content.clone();
+        PropActionReturn {
+            returned_items,
+            inspection,
+            inspected_items,
+        }
     }
-
-    fn add_name(&mut self, map_name: String) -> &mut Self {
-        self.map_name = Some(map_name);
-        self
-    }
-
-    fn add_base_material(&mut self, x: u32, y: u32, tile: Tile<Forest>) -> &mut Self {
-        self.tiles[y as usize][x as usize] = tile;
-        self
-    }
-    fn build(&self) -> Map<Forest> {
-        Map {
-            environment: self.environment.clone(),
-            name: self.map_name.clone(),
-            description: self.description.clone(),
-            tiles: self.tiles.clone(),
+    pub fn apply_effect(&mut self, action: PropAction) -> PropActionReturn {
+        match action.effect {
+            PropEffect::Inspect => self.inspect(),
+            PropEffect::TakeAll => self.take_all(),
+            PropEffect::Take => self.take(action),
+            PropEffect::Attack => self.attack(action),
+            PropEffect::Fix => self.fix(action),
+            PropEffect::Place => self.place(action),
         }
     }
 }
+
 fn main() {
-    let map = ForestBuilder::new(2, 2, Tile::new(ForestMaterial::Soil))
+    let map = ForestBuilder::new(2, 2, 5, Tile::new(ForestMaterial::Soil))
         .add_name(String::from("The 100 Acre Woods"))
-        .add_description(String::from("The woods, though lined with dirt moss and detritus, represents a fresh and clean start. The threashold to adventure."))
+        .add_description(String::from("The woods, though lined with dirt moss and detritus, represents a fresh and clean start. The threshold to adventure."))
         .add_base_material(0, 0, Tile::new(ForestMaterial::Leaves))
-        .add_base_material(0, 1, Tile::new(ForestMaterial::Gravel).set_blocking(true).clone())
+        .add_base_material(0, 1, Tile::new(ForestMaterial::Gravel).clone())
         .build();
     println!("{:?}", map);
 
-    let mut map = ForestBuilder::new(2, 2, Tile::new(ForestMaterial::Soil));
+    let mut map = ForestBuilder::new(2, 2, 5, Tile::new(ForestMaterial::Soil));
     map.add_base_material(0, 0, Tile::new(ForestMaterial::Leaves));
-    map.add_base_material(
-        0,
-        1,
-        Tile::new(ForestMaterial::Gravel).set_blocking(true).clone(),
+    map.add_base_material(0, 1, Tile::new(ForestMaterial::Gravel).clone());
+    map.add_base_material(0, 1, Tile::new(ForestMaterial::Gravel).clone());
+    let mut map = map.build();
+
+    let gold_coin = Prop::new(
+        "coin".to_string(),
+        "A golden coin. Seems like trash to me.".to_string(),
+        vec![],
     );
-    map.add_base_material(
-        0,
-        1,
-        Tile::new(ForestMaterial::Gravel)
-            .set_opaque(true)
-            .set_blocking(true)
-            .clone(),
+
+    let rag = Prop::new(
+        "Rag".to_string(),
+        "A dirty rag. Could be useful...".to_string(),
+        vec![],
     );
-    let map = map.build();
+
+    let pot = Prop::new(
+        String::from("Old Pot"),
+        String::from("A rustic old pot, covered in moss and dirt."),
+        vec![gold_coin, rag],
+    );
+
+    let floor_lamp = Prop::new(
+        String::from("Floor Lamp"),
+        String::from("A tall floor lamp with a warm glow."),
+        vec![],
+    );
+
+    map.add_prop(1, 1, pot);
+    map.add_prop(0, 0, floor_lamp);
     println!("{:?}", map);
 
     // EXAMPLE: How to apply an effect on an appendage
