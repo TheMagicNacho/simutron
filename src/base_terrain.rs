@@ -1,4 +1,3 @@
-use crate::Prop;
 use std::fmt::Debug;
 use std::marker::PhantomData;
 
@@ -69,22 +68,6 @@ pub struct Map<T: Terrain> {
 
     // Manifolds
     pub(crate) tiles: Vec<Vec<Tile<T>>>,
-    pub(crate) props: Vec<Vec<Option<Prop>>>,
-}
-
-impl<T: Terrain> Map<T> {
-    pub fn add_prop(&mut self, x: usize, y: usize, prop: Prop) {
-        if self.props.len() != self.tiles.len() {
-            while self.props.len() < self.tiles.len() {
-                let width = self.tiles[self.props.len()].len();
-                self.props.push(Vec::with_capacity(width));
-            }
-        }
-        while self.props[y].len() <= x {
-            self.props[y].push(None);
-        }
-        self.props[y][x] = Some(prop);
-    }
 }
 
 impl<T: Terrain> Debug for Map<T> {
@@ -105,18 +88,6 @@ impl<T: Terrain> Debug for Map<T> {
         for y in 0..self.tiles.len() {
             for x in 0..self.tiles[y].len() {
                 write!(f, "| {:?} |", self.tiles[y][x].material)?;
-            }
-            writeln!(f)?;
-        }
-
-        writeln!(f)?;
-        for y in 0..self.props.len() {
-            for x in 0..self.props[y].len() {
-                let name = &self.props[y][x];
-                match name {
-                    Some(prop) => write!(f, "| {:?} |", prop.name)?,
-                    None => write!(f, "|   |")?,
-                }
             }
             writeln!(f)?;
         }

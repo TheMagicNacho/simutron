@@ -150,10 +150,12 @@ pub struct CreatureActions {
 }
 
 /// Represents a character with a name and body structure
+/// A creature is an entity with a pre-defined set of components.
 #[derive(Debug, Clone)]
 pub struct Creature {
     pub name: String,
     pub corpus: Appendage,
+    pub components: HashMap<String, Appendage>,
 }
 
 impl Creature {

@@ -61,7 +61,6 @@ impl MapBuilder<Forest> for ForestBuilder {
             name: self.map_name.clone(),
             description: self.description.clone(),
             tiles: self.tiles.clone(),
-            props: vec![],
         }
     }
 }
