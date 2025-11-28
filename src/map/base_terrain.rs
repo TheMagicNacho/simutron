@@ -1,5 +1,6 @@
 use std::fmt::Debug;
 use std::marker::PhantomData;
+use uuid::Uuid;
 
 pub trait Terrain: 'static + Debug + Clone + PartialEq {
     type Material: 'static + Debug + Clone + PartialEq;
@@ -68,6 +69,7 @@ pub struct Map<T: Terrain> {
 
     // Manifolds
     pub(crate) tiles: Vec<Vec<Tile<T>>>,
+    pub(crate) id: Uuid,
 }
 
 impl<T: Terrain> Debug for Map<T> {
@@ -97,8 +99,8 @@ impl<T: Terrain> Debug for Map<T> {
 
 pub trait MapBuilder<T: Terrain> {
     fn new(width: u32, height: u32, tile_size: u32, default_tile: Tile<T>) -> Self;
-    fn add_description(&mut self, description: String) -> &mut Self;
-    fn add_name(&mut self, map_name: String) -> &mut Self;
+    fn add_description(&mut self, description: &str) -> &mut Self;
+    fn add_name(&mut self, map_name: &str) -> &mut Self;
     fn add_base_material(&mut self, x: u32, y: u32, tile: Tile<T>) -> &mut Self;
     fn build(&self) -> Map<T>;
 }
