@@ -1,42 +1,36 @@
 use crate::creatures::components::CreatureActions;
-use crate::creatures::creature_builder::{Appendage, AppendageEffect};
+use crate::creatures::creature_builder::AppendageEffect;
 use crate::ecs::entity::Entity;
+use crate::errors::SimutronError;
 use creatures::components::Creature;
 use creatures::creature_builder::MorphologyBuilder;
-use ecs::components::{Health, Inventory, Position};
+use ecs::components::{Inventory, Position, PropHealth};
 use ecs::world::World;
-use log::debug;
 use map::base_terrain::{MapBuilder, Tile};
 use map::forest::{ForestBuilder, ForestMaterial};
 use props::components::Prop;
+use std::error::Error;
 
 mod creatures;
 mod ecs;
+mod errors;
 mod map;
 mod props;
 
-fn get_appendage_ref_by_name(appendage: &mut Appendage, action: CreatureActions) {
-    if appendage.name == action.target {
-        appendage.apply_effect(action.effect, action.impact);
-        return;
-    }
-    if let Some(ref mut children) = appendage.connected_to {
-        for child in children.iter_mut() {
-            get_appendage_ref_by_name(child, action.clone());
-        }
-    }
+// prop
+enum PropEffect {
+    Fix,
+    Damage,
+    // Open,
+    // Inspect,
+}
+struct PropAction {
+    from: Entity,
+    to: Entity,
+    effect: PropEffect,
+    impact: i32,
 }
 
-fn apply_creature_action(world: &mut World, action: &CreatureActions) {
-    let creature = world.get_component_mut::<Creature>(action.to);
-    if let Some(creature) = creature {
-        let root = &mut creature.corpus;
-        get_appendage_ref_by_name(root, action.clone());
-        return;
-    } else {
-        debug!("Creature {:#?} not found in world.", action.to);
-    }
-}
 fn main() {
     // WORLD CREATION
     let mut world = World::new();
@@ -44,9 +38,12 @@ fn main() {
     let mut forest_map = ForestBuilder::new(5, 5, 5, Tile::new(ForestMaterial::Soil));
     forest_map.add_base_material(0, 0, Tile::new(ForestMaterial::Leaves));
     forest_map.add_base_material(0, 1, Tile::new(ForestMaterial::Gravel).clone());
-    forest_map.add_base_material(0, 1, Tile::new(ForestMaterial::Gravel).clone());
+    forest_map.add_base_material(0, 2, Tile::new(ForestMaterial::Gravel).clone());
+    forest_map.add_base_material(0, 3, Tile::new(ForestMaterial::Gravel).clone());
+    forest_map.add_base_material(0, 4, Tile::new(ForestMaterial::Gravel).clone());
     forest_map.add_name("Forest");
     let forest_map = forest_map.build();
+    println!("{:#?}", forest_map.clone());
     let forest_map_id = Some(forest_map.id);
     world.add_map(forest_map);
 
@@ -87,8 +84,8 @@ fn main() {
         coin,
         Position {
             map: forest_map_id,
-            x: 1,
-            y: 1,
+            x: 0,
+            y: 0,
         },
     ); // we can give the prop a Positional component
 
@@ -103,7 +100,15 @@ fn main() {
             description: String::from("A clay jar."),
         },
     );
-    world.add_component(jar, Health { health: 100 });
+    world.add_component(jar, PropHealth { health: 100 });
+    world.add_component(
+        jar,
+        Position {
+            map: forest_map_id,
+            x: 4,
+            y: 0,
+        },
+    );
     world.add_component(
         jar,
         Inventory {
@@ -114,8 +119,7 @@ fn main() {
     let alice = world.get_creature_by_name("Alice").unwrap().1.clone();
     println!("Alice's overall health: {}", alice.get_character_health());
 
-    // EXAMPLE: How to create an action and apply an action on a creature
-
+    // In an unprovoked turn of events, bob decides to attack alice.
     let swing = CreatureActions {
         from: world.get_creature_by_name("Bob").unwrap().0,
         to: world.get_creature_by_name("Alice").unwrap().0,
@@ -123,7 +127,26 @@ fn main() {
         effect: AppendageEffect::Abrasion,
         impact: -30,
     };
-    apply_creature_action(&mut world, &swing);
+    world.apply_creature_action(&swing).unwrap();
+
+    println!(
+        "After attack, Alice's overall health: {}",
+        world
+            .get_creature_by_name("Alice")
+            .unwrap()
+            .1
+            .get_character_health()
+    );
+    // Wounded, Alice decides to bandage her own hand.
+    let alice = world.get_creature_by_name("Alice").unwrap().0;
+    let bandage = CreatureActions {
+        from: alice,
+        to: alice,
+        target: "Right Hand".to_string(),
+        effect: AppendageEffect::Abrasion,
+        impact: 20,
+    };
+    world.apply_creature_action(&bandage).unwrap();
 
     println!(
         "After attack, Alice's overall health: {}",
@@ -134,21 +157,18 @@ fn main() {
             .get_character_health()
     );
 
-    let alice = world.get_creature_by_name("Alice").unwrap().0;
-    let bandage = CreatureActions {
-        from: alice,
-        to: alice,
-        target: "Right Hand".to_string(),
-        effect: AppendageEffect::Abrasion,
-        impact: 20,
+    // Meanwhile, bob stumbles upon a jar and decides to smash it.
+    let smash_jar = PropAction {
+        from: world.get_creature_by_name("Bob").unwrap().0,
+        to: jar,
+        effect: PropEffect::Damage,
+        impact: 10,
     };
-    apply_creature_action(&mut world, &bandage);
+
+    world.apply_prop_action(&smash_jar).unwrap();
+
     println!(
-        "After attack, Alice's overall health: {}",
-        world
-            .get_creature_by_name("Alice")
-            .unwrap()
-            .1
-            .get_character_health()
+        "Jar's health after being smashed: {}",
+        world.get_component::<PropHealth>(jar).unwrap().health
     );
 }

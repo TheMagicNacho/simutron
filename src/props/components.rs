@@ -1,6 +1,6 @@
 use crate::ecs::component::Component;
 
-#[derive(Debug)]
+#[derive(Debug, Clone)]
 pub struct Prop {
     pub(crate) name: String,
     pub(crate) description: String,

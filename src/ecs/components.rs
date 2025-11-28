@@ -1,12 +1,12 @@
 use crate::ecs::component::Component;
 use uuid::Uuid;
 
-#[derive(Debug)]
-pub struct Health {
+#[derive(Debug, Copy, Clone)]
+pub struct PropHealth {
     pub(crate) health: u8,
 }
 
-impl Component for Health {}
+impl Component for PropHealth {}
 
 #[derive(Debug)]
 pub struct Position {
