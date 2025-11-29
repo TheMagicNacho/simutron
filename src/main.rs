@@ -1,7 +1,7 @@
 use crate::creatures::components::CreatureActions;
 use crate::creatures::creature_builder::AppendageEffect;
-use crate::ecs::entity::Entity;
 use crate::errors::SimutronError;
+use crate::props::components::{PropAction, PropEffect};
 use creatures::components::Creature;
 use creatures::creature_builder::MorphologyBuilder;
 use ecs::components::{Inventory, Position, PropHealth};
@@ -17,19 +17,7 @@ mod errors;
 mod map;
 mod props;
 
-// prop
-enum PropEffect {
-    Fix,
-    Damage,
-    // Open,
-    // Inspect,
-}
-struct PropAction {
-    from: Entity,
-    to: Entity,
-    effect: PropEffect,
-    impact: i32,
-}
+// TODO: Make everything async
 
 fn main() {
     // WORLD CREATION
@@ -112,7 +100,7 @@ fn main() {
     world.add_component(
         jar,
         Inventory {
-            content: vec![crystal.get_uuid()],
+            items: vec![crystal.get_uuid()],
         },
     );
     // GAME RUN LOOP EXAMPLE
@@ -157,7 +145,7 @@ fn main() {
             .get_character_health()
     );
 
-    // Meanwhile, bob stumbles upon a jar and decides to smash it.
+    // Meanwhile, Bob spots a jar and decides to smash it, being the brute that he is.
     let smash_jar = PropAction {
         from: world.get_creature_by_name("Bob").unwrap().0,
         to: jar,
@@ -171,4 +159,34 @@ fn main() {
         "Jar's health after being smashed: {}",
         world.get_component::<PropHealth>(jar).unwrap().health
     );
+
+    // Let's give Alice a fancy pack to hold things.
+    world.add_component(alice, Inventory::new());
+    // Alice decides to inspect the jar.
+    let inspect_jar = PropAction {
+        from: alice,
+        to: jar,
+        effect: PropEffect::Inspect,
+        impact: 60,
+    };
+    let jar_copy = world.apply_prop_action(&inspect_jar).unwrap();
+    println!("Alice inspects the jar: {:#?}", jar_copy);
+    // Woah! She finds a mysterious crystal inside!
+    // She takes it out and puts it in her inventory.
+    let crystal_prop = world
+        .remove_from_inventory(jar, crystal.get_uuid())
+        .unwrap();
+    println!("Alice takes the crystal from the jar: {:#?}", crystal_prop);
+    // She puts it in her own inventory.
+    match world.get_component_mut::<Inventory>(alice) {
+        Some(inventory) => {
+            inventory.items.push(crystal.get_uuid());
+        }
+        None => {
+            panic!("Alice has no inventory to put the crystal in.");
+        }
+    }
+
+    let alice = world.get_creature_by_name("Alice").unwrap().1.clone();
+    println!("Alice's final state: {:#?}", alice);
 }

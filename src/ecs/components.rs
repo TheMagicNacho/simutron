@@ -17,9 +17,16 @@ pub struct Position {
 
 impl Component for Position {}
 
+/// Call it a bag, a pack, a satchel, or a knapsack WHATEVER YOU WANT!
+/// This allows an entity to hold other entities inside it.
+/// The entity still belongs to the world, but logically, it is referenced here for usage.
 #[derive(Debug)]
 pub struct Inventory {
-    pub(crate) content: Vec<Uuid>,
+    pub(crate) items: Vec<Uuid>,
 }
-
 impl Component for Inventory {}
+impl Inventory {
+    pub fn new() -> Self {
+        Self { items: Vec::new() }
+    }
+}
