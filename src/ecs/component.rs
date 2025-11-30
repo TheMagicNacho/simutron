@@ -1,9 +1,11 @@
 use std::any::Any;
 use std::collections::HashMap;
+use std::fmt;
 use uuid::Uuid;
 
-// Component trait - all components must implement this
-pub trait Component: Any + Send + Sync {}
+// pub trait Component: Any + Send + Sync {}
+pub trait Component: Any + Send + Sync + fmt::Debug {
+}
 
 // Storage for a specific component type
 pub struct ComponentVec {

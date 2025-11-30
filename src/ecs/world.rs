@@ -1,7 +1,6 @@
-use crate::creatures::components::{Creature, CreatureActions};
-use crate::creatures::creature_builder::Appendage;
+use crate::creatures::components::Creature;
 use crate::ecs::component::{Component, ComponentVec};
-use crate::ecs::components::{Position, PropHealth};
+use crate::ecs::components::{Inventory, Position, PropHealth};
 use crate::ecs::entity::Entity;
 use crate::map::base_terrain::{Map, Terrain};
 use crate::props::components::Prop;
@@ -73,11 +72,19 @@ impl World {
 
     pub fn create_prop(&mut self, prop_name: &str, prop_description: &str) -> Entity {
         let new_entity = self.create_entity();
-        let new_prop = Prop {
-            name: String::from(prop_name),
-            description: String::from(prop_description),
-        };
+        let new_prop = Prop::new(prop_name, prop_description);
         self.add_component(new_entity, new_prop);
+        self.add_component(new_entity, PropHealth::new(100));
+        self.add_component(new_entity, Inventory::new());
+        self.add_component(
+            new_entity,
+            Position {
+                map: None,
+                x: 0,
+                y: 0,
+            },
+        );
+
         new_entity
     }
 

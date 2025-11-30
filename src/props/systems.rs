@@ -1,4 +1,4 @@
-use crate::ecs::components::{Inventory, PropHealth};
+use crate::ecs::components::{Inventory, Position, PropHealth};
 use crate::ecs::world::World;
 use crate::errors::SimutronResult;
 use crate::props::components::{Prop, PropAction, PropEffect};
@@ -22,6 +22,26 @@ impl World {
             Some(prop) => Ok(prop.clone()),
             None => {
                 runtime_error!("Prop {:?} not found in world.", action.to)
+            }
+        }
+    }
+
+    pub(crate) fn add_to_inventory(&mut self, add_to: Entity, item: Uuid) -> SimutronResult<Prop> {
+        match self.get_component_mut::<Inventory>(add_to) {
+            Some(inventory) => {
+                inventory.items.push(item);
+                match self.get_component::<Prop>(Entity(item)) {
+                    Some(prop) => Ok(prop.clone()),
+                    None => {
+                        runtime_error!("Item {:?} not found in world.", item)
+                    }
+                }
+            }
+            None => {
+                runtime_error!(
+                    "Entity {:?} has no inventory to take item from. Did you remember to attach an `Inventory` component?",
+                    add_to
+                )
             }
         }
     }
@@ -58,10 +78,30 @@ impl World {
         }
     }
 
-    fn prop_inspect(&self, action: &PropAction) -> SimutronResult<()> {
-        let prop = self.get_component::<Prop>(action.to);
+    /// Adds any attached components to the Prop component for inspection.
+    /// Allows/expects a function to call the prop once it has mutated.
+    fn prop_inspect(&mut self, action: &PropAction) -> SimutronResult<()> {
+        let entity = action.to;
+        let prop = self.get_component::<Prop>(entity);
         match prop {
-            Some(prop) => Ok(()),
+            Some(prop) => {
+                // get all components of the entity
+                let health = self.get_component::<PropHealth>(entity).copied();
+                let inventory = self.get_component::<Inventory>(entity).clone().cloned();
+                let position = self.get_component::<Position>(entity).copied();
+
+                self.add_component(
+                    entity,
+                    Prop {
+                        name: prop.name.clone(),
+                        description: prop.description.clone(),
+                        health,
+                        inventory,
+                        position,
+                    },
+                );
+                Ok(())
+            }
             None => {
                 runtime_error!("Prop {:?} not found in world.", action.to)
             }

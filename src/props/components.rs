@@ -1,4 +1,5 @@
 use crate::ecs::component::Component;
+use crate::ecs::components::{Inventory, Position, PropHealth};
 use crate::ecs::entity::Entity;
 
 // prop
@@ -20,6 +21,19 @@ pub struct PropAction {
 pub struct Prop {
     pub name: String,
     pub description: String,
+    pub health: Option<PropHealth>,
+    pub inventory: Option<Inventory>,
+    pub position: Option<Position>,
 }
-
 impl Component for Prop {}
+impl Prop {
+    pub fn new(name: &str, description: &str) -> Self {
+        Prop {
+            name: String::from(name),
+            description: String::from(description),
+            health: None,
+            inventory: None,
+            position: None,
+        }
+    }
+}

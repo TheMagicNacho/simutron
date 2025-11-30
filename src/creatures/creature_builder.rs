@@ -16,16 +16,11 @@ enum AppendageHealth {
 
 #[derive(Clone, Copy, Debug, Eq, Hash, PartialEq)]
 pub enum AppendageEffect {
-    /// There is a cut or laceration. Heals on its own over time or with treatment.`
     Abrasion,
-    /// Bones are broken. Requires medical treatment to heal.
-    Crush,
-    ///  The appendage is burned. Heals over time, but will leave a scar if not treated.
-    Burn,
-    /// Requires an antidote to heal. Will worsen over time without treatment.
-    Poison,
-    /// The appendage is infected. Requires antibiotics to heal. Will worsen over time without treatment.
-    Infect,
+    // Crush,
+    // Burn,
+    // Poison,
+    // Infect,
 }
 
 /// An appendage represents an external body part of a character. Characters can have multiple appendages, each with their own health and state.
@@ -128,11 +123,4 @@ impl MorphologyBuilder {
     pub fn build(&self) -> Appendage {
         self.root.clone()
     }
-}
-
-enum CharacterClass {
-    Fighter,
-    Rogue,
-    Mage,
-    Bard,
 }

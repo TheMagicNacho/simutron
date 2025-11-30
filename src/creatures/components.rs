@@ -45,7 +45,7 @@ impl Creature {
 pub struct CreatureActions {
     /// Who generated the action. String name of the character.
     pub from: Entity,
-    /// Where is the action amied for.
+    /// To whom is the action meant for.
     pub to: Entity,
     /// Which appendage is the target of the action.
     pub target: String,

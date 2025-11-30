@@ -1,15 +1,15 @@
 use crate::creatures::components::CreatureActions;
 use crate::creatures::creature_builder::AppendageEffect;
+use crate::ecs::entity::Entity;
 use crate::errors::SimutronError;
 use crate::props::components::{PropAction, PropEffect};
 use creatures::components::Creature;
 use creatures::creature_builder::MorphologyBuilder;
-use ecs::components::{Inventory, Position, PropHealth};
+use ecs::components::{Inventory, PropHealth};
 use ecs::world::World;
 use map::base_terrain::{MapBuilder, Tile};
 use map::forest::{ForestBuilder, ForestMaterial};
 use props::components::Prop;
-use std::error::Error;
 
 mod creatures;
 mod ecs;
@@ -21,6 +21,8 @@ mod props;
 
 fn main() {
     // WORLD CREATION
+    println!("Welcome to Simutron!");
+    println!("Our first step is to create a map");
     let mut world = World::new();
 
     let mut forest_map = ForestBuilder::new(5, 5, 5, Tile::new(ForestMaterial::Soil));
@@ -30,13 +32,19 @@ fn main() {
     forest_map.add_base_material(0, 3, Tile::new(ForestMaterial::Gravel).clone());
     forest_map.add_base_material(0, 4, Tile::new(ForestMaterial::Gravel).clone());
     forest_map.add_name("Forest");
+    forest_map.add_description("A serene forest filled with tall trees and the sound of chirping birds. A great start to our world.");
     let forest_map = forest_map.build();
+    println!("Now here's what our map looks like:");
     println!("{:#?}", forest_map.clone());
-    let forest_map_id = Some(forest_map.id);
-    world.add_map(forest_map);
+    println!("Great! Now let's add this map to the world.");
+    world.add_map(forest_map.clone());
 
-    // EXAMPLE: How to build a morphology
+    println!("Next, let's create a morphology for our creatures.");
+    println!("A Morphology defines the structure of a creature's body, including its appendages.");
+    // First you create the root appendage.
     let mut humanoid = MorphologyBuilder::new("Torso");
+    // Then you add appendages to it.
+    // Each appendage has it's own state and health value. More on that later.
     humanoid.add_appendage("Torso", "Left Arm");
     humanoid.add_appendage("Torso", "Right Arm");
     humanoid.add_appendage("Left Arm", "Left Hand");
@@ -48,66 +56,78 @@ fn main() {
     humanoid.add_appendage("Torso", "Head");
 
     let humanoid_structure = humanoid.build();
+    println!("Here's our humanoid morphology:");
+    println!("{:#?}", humanoid_structure);
 
+    println!("Now let's create some creatures using this morphology.");
     let alice_body = Creature {
         name: "Alice".to_string(),
         corpus: humanoid_structure.clone(),
     };
     world.create_creature(alice_body);
 
+    // Everything is an entity.
+    // Creatures are entities with a Creature and Position component automatically added.
+    // We could manually create an entity and add those components ourselves if we wanted.
     let bob_body = Creature {
         name: "Bob".to_string(),
         corpus: humanoid_structure.clone(),
     };
     world.create_creature(bob_body);
 
-    // You can create a prop manually using the foundational entities.
+    println!("Props are entities in the world that creatures can interact with.");
+    println!("Let's create some props and add them to the world.");
+    // You can create a prop manually to limit the components that are attached to the prop like so:
+    // 1. Create the entity
     let coin = world.create_entity();
-    let coin_prop = Prop {
-        name: String::from("Gold Coin"),
-        description: String::from("A coin of impressive value."),
-    };
-    world.add_component(coin, coin_prop); // A prop is a component
-    world.add_component(
-        coin,
-        Position {
-            map: forest_map_id,
-            x: 0,
-            y: 0,
-        },
-    ); // we can give the prop a Positional component
+    // 2. Create the prop component
+    let coin_prop = Prop::new("Gold Coin", "A shiny gold coin. It looks valuable.");
+    // 3. add the prop component to the entity
+    world.add_component(coin, coin_prop);
 
-    // Or you can create a prop using the helper methods.
+    // Alternatively, you can use the helper function to create a prop with default components.
     let crystal = world.create_prop("Mysterious Crystal", "A crystal of mysterious power.");
+    // This comes with Health, Position, and Inventory components by default.
+    let jar = world.create_prop(
+        "Clay Jar",
+        "A sturdy jar that seems to be made of an sturdy material.",
+    );
+    // Let us add the crystal and the coin to the jar's inventory.
+    // The important thing to note here is taht we can overwrite components on entities at any time.
+    // Components are stored as hashmaps internally, so adding a component that already exists simply overwrites it.
+    println!(
+        "Jar inventory before adding props has {:#?} items.",
+        world.get_component::<Inventory>(jar).unwrap().items.len()
+    );
 
-    let jar = world.create_entity();
-    world.add_component(
-        jar,
-        Prop {
-            name: String::from("Jar"),
-            description: String::from("A clay jar."),
-        },
-    );
-    world.add_component(jar, PropHealth { health: 100 });
-    world.add_component(
-        jar,
-        Position {
-            map: forest_map_id,
-            x: 4,
-            y: 0,
-        },
-    );
     world.add_component(
         jar,
         Inventory {
-            items: vec![crystal.get_uuid()],
+            items: vec![crystal.get_uuid(), coin.get_uuid()],
         },
     );
-    // GAME RUN LOOP EXAMPLE
-    let alice = world.get_creature_by_name("Alice").unwrap().1.clone();
-    println!("Alice's overall health: {}", alice.get_character_health());
+    let jar_inventory = world.get_component::<Inventory>(jar).unwrap();
+    println!("but now, the jar contains: ");
+    for item_id in &jar_inventory.items {
+        let item_prop = world.get_component::<Prop>(Entity(*item_id)).unwrap();
+        println!("A {}, {}", item_prop.name, item_prop.description);
+    }
+    println!();
 
-    // In an unprovoked turn of events, bob decides to attack alice.
+    println!("Amazing! We've built our world and filled it with creatures and props.");
+    println!("Let's see how our creatures can interact with each other and the props.");
+
+    println!();
+    let alice = world.get_creature_by_name("Alice").unwrap().1.clone();
+    println!(
+        "Alice is an amazing witch with a total health of: {}",
+        alice.get_character_health()
+    );
+
+    println!(
+        "Bob, being the aggressive type, decides to attack Alice by swinging at her right hand."
+    );
+    // Create a Creature action to perform some sort of effect on a target appendage.
     let swing = CreatureActions {
         from: world.get_creature_by_name("Bob").unwrap().0,
         to: world.get_creature_by_name("Alice").unwrap().0,
@@ -115,17 +135,19 @@ fn main() {
         effect: AppendageEffect::Abrasion,
         impact: -30,
     };
+    // then apply it.
     world.apply_creature_action(&swing).unwrap();
 
     println!(
-        "After attack, Alice's overall health: {}",
+        "'That wretched brute!', Alice thought. She realizes her health is now: {}",
         world
             .get_creature_by_name("Alice")
             .unwrap()
             .1
             .get_character_health()
     );
-    // Wounded, Alice decides to bandage her own hand.
+
+    println!("Alice quickly decides to bandage her wounded hand.");
     let alice = world.get_creature_by_name("Alice").unwrap().0;
     let bandage = CreatureActions {
         from: alice,
@@ -137,7 +159,7 @@ fn main() {
     world.apply_creature_action(&bandage).unwrap();
 
     println!(
-        "After attack, Alice's overall health: {}",
+        "Phew, luckily Alice paid attention during healing potions class. Her health is now: {}",
         world
             .get_creature_by_name("Alice")
             .unwrap()
@@ -145,48 +167,60 @@ fn main() {
             .get_character_health()
     );
 
-    // Meanwhile, Bob spots a jar and decides to smash it, being the brute that he is.
+    println!("Meanwhile, Bob spots a jar on a nearby rock.");
+    println!("Curious, he decides to smash it open.");
     let smash_jar = PropAction {
         from: world.get_creature_by_name("Bob").unwrap().0,
         to: jar,
         effect: PropEffect::Damage,
-        impact: 10,
+        impact: 1,
     };
-
     world.apply_prop_action(&smash_jar).unwrap();
 
     println!(
-        "Jar's health after being smashed: {}",
+        "But the Jar appears to be one of the same material as a wall in a FromSoft game! Jar's health after being smashed: {}",
         world.get_component::<PropHealth>(jar).unwrap().health
     );
 
-    // Let's give Alice a fancy pack to hold things.
+    println!("Not one to be deterred, Alice dawns on a cool backpack.");
+    // Inventory allows entities to hold props.
     world.add_component(alice, Inventory::new());
-    // Alice decides to inspect the jar.
+
+    // get the jar's inventory and create a list of its contents
+
     let inspect_jar = PropAction {
         from: alice,
         to: jar,
         effect: PropEffect::Inspect,
-        impact: 60,
+        impact: 0,
     };
-    let jar_copy = world.apply_prop_action(&inspect_jar).unwrap();
-    println!("Alice inspects the jar: {:#?}", jar_copy);
-    // Woah! She finds a mysterious crystal inside!
-    // She takes it out and puts it in her inventory.
+    let jar_inspection = world.apply_prop_action(&inspect_jar).unwrap();
+    println!("Alice inspects the jar... {:#?}", jar_inspection);
+
+    println!();
+    println!("WOAH! She notices a mysterious crystal inside the jar.");
+
+    println!("So, she decides to take it out and put it in her backpack.");
+
     let crystal_prop = world
         .remove_from_inventory(jar, crystal.get_uuid())
         .unwrap();
-    println!("Alice takes the crystal from the jar: {:#?}", crystal_prop);
-    // She puts it in her own inventory.
-    match world.get_component_mut::<Inventory>(alice) {
-        Some(inventory) => {
-            inventory.items.push(crystal.get_uuid());
-        }
-        None => {
-            panic!("Alice has no inventory to put the crystal in.");
-        }
-    }
+    println!(
+        "Alice takes the crystal from the jar... {:#?}",
+        crystal_prop
+    );
+    world.add_to_inventory(alice, crystal.get_uuid()).unwrap();
 
-    let alice = world.get_creature_by_name("Alice").unwrap().1.clone();
-    println!("Alice's final state: {:#?}", alice);
+    let alice_inventory = world.get_component::<Inventory>(alice).unwrap();
+    println!(
+        "She puts the crystal in her backpack. Her inventory now contains {:#} item(s).",
+        alice_inventory.items.len()
+    );
+    // This is a way to prove/show how to get a prop given an entity id.
+    let crystal_in_alice = world
+        .get_component::<Prop>(Entity(alice_inventory.items[0]))
+        .unwrap();
+    println!("Which is... {:#?}", crystal_in_alice);
+
+    println!("{:?}", forest_map.clone());
 }

@@ -1,4 +1,5 @@
 use crate::map::base_terrain::{Environments, Map, MapBuilder, Terrain, Tile};
+use std::collections::HashMap;
 use uuid::Uuid;
 
 // Actual Environments (testing with forest)
@@ -67,6 +68,7 @@ impl MapBuilder<Forest> for ForestBuilder {
             environment: self.environment.clone(),
             name: self.map_name.clone(),
             description: self.description.clone(),
+            entities: HashMap::new(),
             tiles: self.tiles.clone(),
         }
     }
