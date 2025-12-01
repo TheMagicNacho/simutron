@@ -1,10 +1,11 @@
-use crate::creatures::components::CreatureActions;
+use crate::creatures::components::{CreatureActions, CreatureSheet};
 use crate::creatures::creature_builder::AppendageEffect;
+use crate::ecs::components::Position;
 use crate::ecs::entity::Entity;
 use crate::errors::SimutronError;
 use crate::props::components::{PropAction, PropEffect};
-use creatures::components::Creature;
 use creatures::creature_builder::MorphologyBuilder;
+use creatures::Creature;
 use ecs::components::{Inventory, PropHealth};
 use ecs::world::World;
 use map::base_terrain::{MapBuilder, Tile};
@@ -44,7 +45,7 @@ fn main() {
     // First you create the root appendage.
     let mut humanoid = MorphologyBuilder::new("Torso");
     // Then you add appendages to it.
-    // Each appendage has it's own state and health value. More on that later.
+    // Each appendage has its own state and health value. More on that later.
     humanoid.add_appendage("Torso", "Left Arm");
     humanoid.add_appendage("Torso", "Right Arm");
     humanoid.add_appendage("Left Arm", "Left Hand");
@@ -93,7 +94,7 @@ fn main() {
         "A sturdy jar that seems to be made of an sturdy material.",
     );
     // Let us add the crystal and the coin to the jar's inventory.
-    // The important thing to note here is taht we can overwrite components on entities at any time.
+    // The important thing to note here is that we can overwrite components on entities at any time.
     // Components are stored as hashmaps internally, so adding a component that already exists simply overwrites it.
     println!(
         "Jar inventory before adding props has {:#?} items.",
@@ -222,5 +223,86 @@ fn main() {
         .unwrap();
     println!("Which is... {:#?}", crystal_in_alice);
 
-    println!("{:?}", forest_map.clone());
+    println!();
+    let alice_pos = world.get_component::<Position>(alice).unwrap();
+    println!("Alice's initial position is: {:#?}", alice_pos);
+
+    let alice_spawn_point = Position {
+        map: Some(forest_map.id),
+        x: 0,
+        y: 4,
+    };
+    world.teleport_creature(alice, alice_spawn_point).unwrap();
+
+    let alice_pos = world.get_component::<Position>(alice).unwrap();
+    println!("Alice's spawn position is: {:#?}", alice_pos);
+
+    let alice_creature_sheet = CreatureSheet {
+        speed: 15,
+        strength: 5,
+        intelligence: 5,
+        dexterity: 5,
+        constitution: 5,
+        wisdom: 5,
+        charisma: 5,
+    };
+    world.add_component(alice, alice_creature_sheet);
+
+    let move_up = Position {
+        map: Some(forest_map.id),
+        x: 0,
+        y: 3,
+    };
+    let move_right = Position {
+        map: Some(forest_map.id),
+        x: 1,
+        y: 3,
+    };
+    let move_diagonal = Position {
+        map: Some(forest_map.id),
+        x: 2,
+        y: 2,
+    };
+    let movement_positions = vec![move_up, move_right, move_diagonal];
+
+    world.move_creature(alice, movement_positions).unwrap();
+
+    let diag_1 = Position {
+        map: Some(forest_map.id),
+        x: 3,
+        y: 1,
+    };
+    let diag_2 = Position {
+        map: Some(forest_map.id),
+        x: 4,
+        y: 0,
+    };
+    let movement_positions = vec![diag_1, diag_2];
+    world.move_creature(alice, movement_positions).unwrap();
+
+    let alice_pos = world.get_component::<Position>(alice).unwrap();
+    println!("Alice's new position is: {:#?}", alice_pos);
+
+    let diag_1 = Position {
+        map: Some(forest_map.id),
+        x: 3,
+        y: 1,
+    };
+    let diag_2 = Position {
+        map: Some(forest_map.id),
+        x: 2,
+        y: 2,
+    };
+    let diag_3 = Position {
+        map: Some(forest_map.id),
+        x: 1,
+        y: 3,
+    };
+    let movement_positions = vec![diag_1, diag_2, diag_3];
+    world.move_creature(alice, movement_positions).unwrap();
+    let alice_pos = world.get_component::<Position>(alice).unwrap();
+    println!("Alice's final position is: {:#?}", alice_pos);
+    println!(
+        "You'll notice that alice could not complete her movement and only moved the valid step."
+    )
 }

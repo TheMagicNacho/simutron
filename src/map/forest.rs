@@ -1,4 +1,4 @@
-use crate::map::base_terrain::{Environments, Map, MapBuilder, Terrain, Tile};
+use crate::map::base_terrain::{BaseMap, Environments, MapBuilder, Terrain, Tile};
 use std::collections::HashMap;
 use uuid::Uuid;
 
@@ -61,15 +61,18 @@ impl MapBuilder<Forest> for ForestBuilder {
         self
     }
 
-    fn build(&self) -> Map<Forest> {
-        Map {
+    fn build(&self) -> BaseMap<Forest> {
+        BaseMap {
             id: self.id,
-            tile_size: self.tile_size,
+            scale: self.tile_size,
             environment: self.environment.clone(),
             name: self.map_name.clone(),
             description: self.description.clone(),
             entities: HashMap::new(),
             tiles: self.tiles.clone(),
         }
+    }
+    fn get_tile_size(&self) -> u32 {
+        self.tile_size
     }
 }

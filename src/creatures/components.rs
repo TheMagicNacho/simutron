@@ -1,44 +1,19 @@
-use crate::creatures::creature_builder::{Appendage, AppendageEffect};
+use crate::creatures::creature_builder::AppendageEffect;
 use crate::ecs::component::Component;
 use crate::ecs::entity::Entity;
 
-/// Represents a character with a name and body structure
-/// A creature is an entity with a pre-defined set of components.
-#[derive(Debug, Clone)]
-pub struct Creature {
-    pub name: String,
-    pub corpus: Appendage,
+/// The stats that define a creature's capabilities.
+#[derive(Clone, Debug)]
+pub struct CreatureSheet {
+    pub speed: u32,
+    pub strength: u8,
+    pub intelligence: u8,
+    pub dexterity: u8,
+    pub constitution: u8,
+    pub wisdom: u8,
+    pub charisma: u8,
 }
-
-impl Component for Creature {}
-
-impl Creature {
-    pub fn get_character_health(&self) -> u8 {
-        let (appendages, total_health) = self.calculate_corpus_health(self.corpus.clone());
-        let average_health = if appendages > 0 {
-            total_health / (appendages)
-        } else {
-            0
-        };
-        average_health as u8
-    }
-
-    fn calculate_corpus_health(&self, appendage: Appendage) -> (i32, i32) {
-        if appendage.connected_to.is_none() {
-            return (1, appendage.get_health().into());
-        }
-        let mut total_appendages = 1i32; // Count the current appendage
-        let mut total_health = appendage.get_health() as i32;
-        if let Some(children) = &appendage.connected_to {
-            for child in children {
-                let (child_count, child_health) = self.calculate_corpus_health(child.clone());
-                total_appendages += child_count;
-                total_health += child_health;
-            }
-        }
-        (total_appendages, total_health)
-    }
-}
+impl Component for CreatureSheet {}
 
 /// Represents an action taken by a character on another character
 #[derive(Clone, Debug)]

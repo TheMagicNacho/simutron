@@ -1,5 +1,6 @@
-use crate::creatures::components::{Creature, CreatureActions};
+use crate::creatures::components::CreatureActions;
 use crate::creatures::creature_builder::Appendage;
+use crate::creatures::Creature;
 use crate::ecs::entity::Entity;
 use crate::ecs::world::World;
 use crate::errors::SimutronResult;
@@ -32,10 +33,7 @@ impl World {
         }
     }
 
-    pub(crate) fn apply_creature_action(
-        &mut self,
-        action: &CreatureActions,
-    ) -> SimutronResult<Creature> {
+    pub fn apply_creature_action(&mut self, action: &CreatureActions) -> SimutronResult<Creature> {
         let creature = self.get_component_mut::<Creature>(action.to);
         if let Some(creature) = creature {
             let root = &mut creature.corpus;

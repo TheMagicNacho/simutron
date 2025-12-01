@@ -10,7 +10,7 @@ use uuid::Uuid;
 
 impl World {
     /// Apply a prop action to a prop in the world.
-    /// Returns a copy of the Prop after the action is applied as a curtesy. You'll need to get a reffrence if you want to do additoinal changes.
+    /// Returns a copy of the Prop after the action is applied as a curtesy. You'll need to get a reference if you want to do additional changes.
     pub fn apply_prop_action(&mut self, action: &PropAction) -> SimutronResult<Prop> {
         match action.effect {
             PropEffect::Fix => self.prop_fix(action)?,
@@ -87,7 +87,7 @@ impl World {
             Some(prop) => {
                 // get all components of the entity
                 let health = self.get_component::<PropHealth>(entity).copied();
-                let inventory = self.get_component::<Inventory>(entity).clone().cloned();
+                let inventory = self.get_component::<Inventory>(entity).cloned();
                 let position = self.get_component::<Position>(entity).copied();
 
                 self.add_component(

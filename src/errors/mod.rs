@@ -29,7 +29,7 @@ impl std::error::Error for SimutronError {
     }
 }
 
-// 3. Implement the From trait to convert external errors into your custom error
+// 3. Implement the 'From' trait to convert external errors into your custom error
 impl From<std::io::Error> for SimutronError {
     fn from(error: std::io::Error) -> Self {
         SimutronError::Generic(error)
