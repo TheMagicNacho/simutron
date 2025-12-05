@@ -1,8 +1,8 @@
 use crate::ecs::components::{Inventory, Position, PropHealth};
 use crate::ecs::world::World;
-use crate::errors::SimutronResult;
+use crate::errors::{SimutronError, SimutronResult};
 use crate::props::components::{Prop, PropAction, PropEffect};
-use crate::{runtime_error, SimutronError};
+use crate::runtime_error;
 
 use crate::ecs::entity::Entity;
 use log::debug;
@@ -10,7 +10,8 @@ use uuid::Uuid;
 
 impl World {
     /// Apply a prop action to a prop in the world.
-    /// Returns a copy of the Prop after the action is applied as a curtesy. You'll need to get a reference if you want to do additional changes.
+    /// Returns a copy of the Prop after the action is applied as a curtesy.
+    /// You'll need to get a reference if you want to do additional changes.
     pub fn apply_prop_action(&mut self, action: &PropAction) -> SimutronResult<Prop> {
         match action.effect {
             PropEffect::Fix => self.prop_fix(action)?,
@@ -26,7 +27,7 @@ impl World {
         }
     }
 
-    pub(crate) fn add_to_inventory(&mut self, add_to: Entity, item: Uuid) -> SimutronResult<Prop> {
+    pub fn add_to_inventory(&mut self, add_to: Entity, item: Uuid) -> SimutronResult<Prop> {
         match self.get_component_mut::<Inventory>(add_to) {
             Some(inventory) => {
                 inventory.items.push(item);
@@ -46,11 +47,7 @@ impl World {
         }
     }
 
-    pub(crate) fn remove_from_inventory(
-        &mut self,
-        take_from: Entity,
-        item: Uuid,
-    ) -> SimutronResult<Prop> {
+    pub fn remove_from_inventory(&mut self, take_from: Entity, item: Uuid) -> SimutronResult<Prop> {
         match self.get_component_mut::<Inventory>(take_from) {
             Some(inventory) => {
                 if let Some(pos) = inventory.items.iter().position(|x| *x == item) {

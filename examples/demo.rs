@@ -1,24 +1,8 @@
-use crate::creatures::components::{CreatureActions, CreatureSheet};
-use crate::creatures::creature_builder::AppendageEffect;
-use crate::ecs::components::Position;
-use crate::ecs::entity::Entity;
-use crate::errors::SimutronError;
-use crate::props::components::{PropAction, PropEffect};
-use creatures::creature_builder::MorphologyBuilder;
-use creatures::Creature;
-use ecs::components::{Inventory, PropHealth};
-use ecs::world::World;
-use map::base_terrain::{MapBuilder, Tile};
-use map::forest::{ForestBuilder, ForestMaterial};
-use props::components::Prop;
+//! Demo example for Simutron RPG Engine
+//!
+//! Run this example with: cargo run --example demo
 
-mod creatures;
-mod ecs;
-mod errors;
-mod map;
-mod props;
-
-// TODO: Make everything async
+use simutron::prelude::*;
 
 fn main() {
     // WORLD CREATION

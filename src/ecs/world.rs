@@ -3,13 +3,12 @@ use crate::creatures::Creature;
 use crate::ecs::component::{Component, ComponentVec};
 use crate::ecs::components::{Inventory, Position, PropHealth};
 use crate::ecs::entity::Entity;
-use crate::errors::SimutronResult;
+use crate::errors::{SimutronError, SimutronResult};
 use crate::map::base_terrain::{BaseMap, Map, Terrain};
 use crate::props::components::Prop;
 use crate::runtime_error;
-use crate::SimutronError;
 use log::warn;
-use std::any::{Any, TypeId};
+use std::any::TypeId;
 use std::collections::HashMap;
 use uuid::Uuid;
 

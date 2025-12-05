@@ -3,9 +3,8 @@ use crate::creatures::creature_builder::Appendage;
 use crate::creatures::Creature;
 use crate::ecs::entity::Entity;
 use crate::ecs::world::World;
-use crate::errors::SimutronResult;
+use crate::errors::{SimutronError, SimutronResult};
 use crate::runtime_error;
-use crate::SimutronError;
 
 impl World {
     pub fn get_creature_by_name(&self, name: &str) -> Option<(Entity, &Creature)> {

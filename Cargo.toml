@@ -1,7 +1,11 @@
 [package]
 name = "simutron"
-version = "0.1.0"
+version = "0.0.1"
 edition = "2024"
+
+[lib]
+name = "simutron"
+path = "src/lib.rs"
 
 [dependencies]
 log = "0.4.28"

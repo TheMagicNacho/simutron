@@ -3,7 +3,7 @@ use uuid::Uuid;
 
 #[derive(Debug, Copy, Clone)]
 pub struct PropHealth {
-    pub(crate) health: u8,
+    pub health: u8,
 }
 
 impl Component for PropHealth {}
@@ -17,9 +17,9 @@ impl PropHealth {
 
 #[derive(Debug, Clone, PartialEq, Eq, Hash, Copy)]
 pub struct Position {
-    pub(crate) map: Option<Uuid>,
-    pub(crate) x: u32,
-    pub(crate) y: u32,
+    pub map: Option<Uuid>,
+    pub x: u32,
+    pub y: u32,
 }
 
 impl Component for Position {}
