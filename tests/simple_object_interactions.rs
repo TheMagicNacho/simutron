@@ -242,6 +242,15 @@ fn test_simutron_integration() {
     let movement_positions = vec![move_up, move_right, move_diagonal];
 
     world.move_creature(alice, movement_positions).unwrap();
+    let alice_pos = world.get_component::<Position>(alice).unwrap();
+    println!(
+        "Alice moves deeper into the woods...\nStopping at: {:?}",
+        alice_pos
+    );
+    assert!(
+        alice_pos.x == 2 && alice_pos.y == 2,
+        "Standard movement failed"
+    );
 
     let diag_1 = Position {
         map: Some(forest_map.id),
@@ -257,8 +266,14 @@ fn test_simutron_integration() {
     world.move_creature(alice, movement_positions).unwrap();
 
     let alice_pos = world.get_component::<Position>(alice).unwrap();
-    println!("Alice's new position is: {:#?}", alice_pos);
-
+    assert!(
+        alice_pos.x == 4 && alice_pos.y == 0,
+        "Alice should be at position (4, 0)"
+    );
+    println!(
+        "Then she sprints all the way to the far side of the map to: {:#?}",
+        alice_pos
+    );
     let diag_1 = Position {
         map: Some(forest_map.id),
         x: 3,

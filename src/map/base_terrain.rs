@@ -1,8 +1,9 @@
 use crate::ecs::components::Position;
 use crate::ecs::entity::Entity;
+use crate::map::environments::Environments;
+use crate::map::maneuverability::TerrainManeuverability;
 use std::collections::HashMap;
 use std::fmt::Debug;
-use std::marker::PhantomData;
 use uuid::Uuid;
 
 pub trait Terrain: 'static + Debug + Clone + PartialEq {
@@ -15,48 +16,39 @@ pub trait Map {
     fn get_width(&self) -> u32;
     fn get_height(&self) -> u32;
 }
-#[derive(Debug, Clone, PartialEq)]
-pub enum Environments {
-    Forest,
-    // Marsh,
-    // Hills,
-    // Mountains,
-    // Urban,
-    // Desert,
-    // Plains,
-    // Aquatic,
-    Dungeon,
-    // Interior, // I think interior is separate from dungeon, but they might be the same.
-}
 
 // IDEA: I think that properties like is_blocking and luminance should be part of the Tile struct
 #[derive(Debug, Clone, PartialEq)]
 pub struct Tile<T: Terrain> {
+    // The material of the tile, specific to the terrain type.
+    // Each material must support the maneuverability trait to define how it affects movement.
     pub material: T::Material,
-    _terrain: PhantomData<T>, // We don't store T, but need to mark it as used.
+    // Maneuverability affects how much it costs for a player to move through a tile.
+    pub terrain_maneuverability: TerrainManeuverability,
+    // If the tile is linked to another tile (e.g., for teleportation, or door)
+    // the player is moved to the linked tile assuming the cost of the maneuverability allows it.
+    pub link: Option<Uuid>,
+    // _terrain: PhantomData<T>, // We don't store T, but need to mark it as used.
 }
 
 impl<T: Terrain> Tile<T> {
     pub fn new(default_material: T::Material) -> Self {
         Tile {
             material: default_material,
-            _terrain: Default::default(),
+            terrain_maneuverability: TerrainManeuverability::Unrestricted,
+            link: None,
+            // terrain_, // _terrain: Default::default(),
         }
     }
-    // pub fn set_blocking(&mut self, is_blocking: bool) -> &mut Self {
-    //     self.is_blocking = is_blocking;
-    //     self
-    // }
-    //
-    // pub fn set_opaque(&mut self, is_opaque: bool) -> &mut Self {
-    //     self.is_opaque = is_opaque;
-    //     self
-    // }
-    // pub fn set_base_luminance(&mut self, base_luminance: u8) -> &mut Self {
-    //     self.base_luminance = base_luminance;
-    //     self
-    // }
-    //
+
+    pub fn set_maneuverability(&mut self, maneuverability: TerrainManeuverability) -> &mut Self {
+        self.terrain_maneuverability = maneuverability;
+        self
+    }
+    pub fn set_link(&mut self, link: Uuid) -> &mut Self {
+        self.link = Some(link);
+        self
+    }
 }
 /// The Map is made up of Tiles and Props
 /// Tiles represent the base terrain of the map

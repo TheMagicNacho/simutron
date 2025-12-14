@@ -1,8 +1,9 @@
-use crate::creatures::creature_builder::Appendage;
+pub(crate) use crate::creatures::creature_builder::Appendage;
 use crate::ecs::component::Component;
 
 pub mod components;
 pub mod creature_builder;
+mod morphologies;
 mod systems;
 
 /// Represents a character with a name and body structure

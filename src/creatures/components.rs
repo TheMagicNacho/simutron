@@ -16,6 +16,7 @@ pub struct CreatureSheet {
 impl Component for CreatureSheet {}
 
 /// Represents an action taken by a character on another character
+/// A traveler object.
 #[derive(Clone, Debug)]
 pub struct CreatureActions {
     /// Who generated the action. String name of the character.

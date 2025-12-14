@@ -4,8 +4,7 @@ use std::fmt;
 use uuid::Uuid;
 
 // pub trait Component: Any + Send + Sync {}
-pub trait Component: Any + Send + Sync + fmt::Debug {
-}
+pub trait Component: Any + Send + Sync + fmt::Debug {}
 
 // Storage for a specific component type
 pub struct ComponentVec {

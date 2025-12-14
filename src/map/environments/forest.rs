@@ -1,4 +1,5 @@
-use crate::map::base_terrain::{BaseMap, Environments, MapBuilder, Terrain, Tile};
+use crate::map::base_terrain::{BaseMap, MapBuilder, Terrain, Tile};
+use crate::map::environments::Environments;
 use std::collections::HashMap;
 use uuid::Uuid;
 
