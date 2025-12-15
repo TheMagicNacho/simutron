@@ -3,6 +3,7 @@ use crate::ecs::component::Component;
 
 pub mod components;
 pub mod creature_builder;
+pub mod morphologies;
 mod systems;
 
 /// Represents a character with a name and body structure

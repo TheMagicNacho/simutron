@@ -2,11 +2,37 @@ use crate::ecs::components::Position;
 use crate::ecs::entity::Entity;
 use std::collections::HashMap;
 use std::fmt::Debug;
-use std::marker::PhantomData;
 use uuid::Uuid;
 
+#[repr(u8)]
+#[derive(Debug, Clone, PartialEq)]
+/// There are three types of maneuverability for terrain:
+/// Unrestricted: No penalty to movement.
+/// Restricted: Minor penalty to movement.
+/// HighlyRestricted: Major penalty to movement.
+/// Blocking: Movement is not possible.
+pub(crate) enum Maneuverability {
+    Unrestricted = 1,
+    Restricted = 2,
+    HighlyRestricted = 3,
+    Blocking = u8::MAX,
+}
+
+impl Maneuverability {
+    /// Returns the modifier associated with the maneuverability level.
+    /// Use this to calculate movement costs.
+    pub fn get_modifier(&self) -> u8 {
+        self.clone() as u8
+    }
+}
+
+pub(crate) trait MaterialManeuverability: 'static + Send + Sync {
+    fn get_maneuverability(&self) -> Maneuverability;
+}
+
 pub trait Terrain: 'static + Debug + Clone + PartialEq {
-    type Material: 'static + Debug + Clone + PartialEq;
+    type Material: 'static + Debug + Clone + PartialEq + MaterialManeuverability;
+    // type Maneuverability: 'static + Debug + Clone + PartialEq;
     // fn default_material() -> Self::Material;
 }
 
@@ -14,6 +40,7 @@ pub trait Map {
     fn get_scale(&self) -> u32;
     fn get_width(&self) -> u32;
     fn get_height(&self) -> u32;
+    fn get_maneuverability(&self, position: Position) -> Option<Maneuverability>;
 }
 #[derive(Debug, Clone, PartialEq)]
 pub enum Environments {
@@ -33,30 +60,16 @@ pub enum Environments {
 #[derive(Debug, Clone, PartialEq)]
 pub struct Tile<T: Terrain> {
     pub material: T::Material,
-    _terrain: PhantomData<T>, // We don't store T, but need to mark it as used.
+    // _terrain: PhantomData<T>, // We don't store T, but need to mark it as used.
 }
 
 impl<T: Terrain> Tile<T> {
     pub fn new(default_material: T::Material) -> Self {
         Tile {
             material: default_material,
-            _terrain: Default::default(),
+            // _terrain: Default::default(),
         }
     }
-    // pub fn set_blocking(&mut self, is_blocking: bool) -> &mut Self {
-    //     self.is_blocking = is_blocking;
-    //     self
-    // }
-    //
-    // pub fn set_opaque(&mut self, is_opaque: bool) -> &mut Self {
-    //     self.is_opaque = is_opaque;
-    //     self
-    // }
-    // pub fn set_base_luminance(&mut self, base_luminance: u8) -> &mut Self {
-    //     self.base_luminance = base_luminance;
-    //     self
-    // }
-    //
 }
 /// The Map is made up of Tiles and Props
 /// Tiles represent the base terrain of the map
@@ -93,6 +106,17 @@ impl<T: Terrain> Map for BaseMap<T> {
     fn get_height(&self) -> u32 {
         self.tiles.len() as u32
     }
+    fn get_maneuverability(&self, position: Position) -> Option<Maneuverability> {
+        let x = position.x;
+        let y = position.y;
+        self.tiles.get(y as usize).and_then(|row| {
+            row.get(x as usize)
+                .map(|tile| tile.material.get_maneuverability())
+        })
+    }
+    // fn get_tile(&self, x: u32, y: u32) -> Option<&dyn MaterialManeuverability> {
+    //     self.tiles.get(y as usize).and_then(|row| row.get(x as usize))
+    // }
 }
 
 impl<T: Terrain> Debug for BaseMap<T> {

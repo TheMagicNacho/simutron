@@ -29,6 +29,7 @@ pub mod prelude {
     pub use crate::creatures::{
         components::{CreatureActions, CreatureSheet},
         creature_builder::{AppendageEffect, MorphologyBuilder},
+        morphologies,
         Creature,
     };
 

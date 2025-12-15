@@ -1,4 +1,6 @@
-use crate::map::base_terrain::{BaseMap, Environments, MapBuilder, Terrain, Tile};
+use crate::map::base_terrain::{
+    BaseMap, Environments, Maneuverability, MapBuilder, MaterialManeuverability, Terrain, Tile,
+};
 use std::collections::HashMap;
 use uuid::Uuid;
 
@@ -8,8 +10,28 @@ pub enum ForestMaterial {
     Soil,
     Leaves,
     Gravel,
+    DenseWoods,
+    Stream,
+    Grass,
+    FallenTree,
+    FallenRocks,
 }
 
+impl MaterialManeuverability for ForestMaterial {
+    /// Returns the maneuverability associated with the title.
+    fn get_maneuverability(&self) -> Maneuverability {
+        match self {
+            ForestMaterial::Soil => Maneuverability::Unrestricted,
+            ForestMaterial::Leaves => Maneuverability::Unrestricted,
+            ForestMaterial::Gravel => Maneuverability::Restricted,
+            ForestMaterial::DenseWoods => Maneuverability::HighlyRestricted,
+            ForestMaterial::Grass => Maneuverability::Unrestricted,
+            ForestMaterial::FallenTree => Maneuverability::Blocking,
+            ForestMaterial::FallenRocks => Maneuverability::Blocking,
+            ForestMaterial::Stream => Maneuverability::HighlyRestricted,
+        }
+    }
+}
 #[derive(Clone, Debug, PartialEq)]
 pub struct Forest;
 

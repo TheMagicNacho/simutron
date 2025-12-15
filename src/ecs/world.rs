@@ -147,24 +147,53 @@ impl World {
                 return runtime_error!("Requested position is not adjacent to previous position.");
             }
             // TODO: Memoize the map scale if the map is the same as the last loop.
+            // MOVEMENT MODIFIERS ARE HERE
             let current_map_scale = match &final_position.map {
-                Some(map_id) => self.maps.get(map_id).unwrap().get_scale(),
-                None => return runtime_error!("Creature is not on a map."),
+                Some(map_id) => {
+                    let map = match self.maps.get(map_id) {
+                        Some(m) => m,
+                        None => {
+                            return runtime_error!("Map not found for position during movement.");
+                        }
+                    };
+                    map.get_scale()
+                }
+                None => return runtime_error!("No position no position map requested."),
             };
+            let maneuver_modifier = match &final_position.map {
+                Some(map_id) => match self.maps.get(map_id) {
+                    Some(map) => match map.get_maneuverability(init_position) {
+                        Some(m) => m.get_modifier() as u32,
+                        None => {
+                            return runtime_error!(
+                                "Could not get maneuverability for position during movement."
+                            );
+                        }
+                    },
+                    None => {
+                        return runtime_error!("Map not found for position during movement.");
+                    }
+                },
+                None => return runtime_error!("No position no position map requested."),
+            };
+
             // First diagonal move costs 1 square, the second diagonal move costs 2 squares, then it repeats.
             // Therefore: if even 1, if odd cost * 2
             let base_cost = if dx == 1 && dy == 1 {
                 if (index & 1) == 0 {
                     current_map_scale
                 } else {
+                    // Scale^2
                     current_map_scale << 1
                 }
             } else {
                 current_map_scale // Orthogonal movement is the cost
             };
 
-            if available_movement >= base_cost {
-                available_movement -= base_cost;
+            let total_cost = base_cost * maneuver_modifier;
+
+            if available_movement >= total_cost {
+                available_movement -= total_cost;
                 init_position = *final_position;
             } else {
                 // Not enough movement left to proceed to the next position
