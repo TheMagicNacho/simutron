@@ -1,6 +1,6 @@
-use crate::creatures::Creature;
 use crate::creatures::components::CreatureActions;
 use crate::creatures::creature_builder::Appendage;
+use crate::creatures::Creature;
 use crate::ecs::entity::Entity;
 use crate::ecs::world::World;
 use crate::errors::{SimutronError, SimutronResult};

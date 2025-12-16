@@ -1,21 +1,21 @@
-//! Simutron - An RPG Game Engine
-//!
-//! Simutron is a flexible RPG engine built on an Entity-Component-System (ECS) architecture.
-//! It provides tools for creating creatures, maps, props, and managing interactions between them.
-//!
-//! # Examples
-//!
-//! ```no_run
-//! use simutron::prelude::*;
-//!
-//! let mut world = World::new();
-//! let creature = Creature {
-//!     name: "Hero".to_string(),
-//!     corpus: MorphologyBuilder::new("Torso").build(),
-//! };
-//! world.create_creature(creature);
-//! ```
-
+/// Simutron - An RPG Game Engine
+///
+/// Simutron is a flexible RPG engine built on an Entity-Component-System (ECS) architecture.
+/// It provides tools for creating creatures, maps, props, and managing interactions between them.
+///
+/// # Examples
+///
+/// ```no_run
+/// use simutron::prelude::*;
+/// use simutron::creatures::humanoid::humanoid_corpus;
+///
+/// let mut world = World::new();
+/// let creature = Creature {
+///     name: "Hero".to_string(),
+///     corpus: humanoid_corpus(),
+/// ;}
+/// world.create_creature(creature);
+/// ```
 // Core modules
 pub mod creatures;
 pub mod ecs;
@@ -29,7 +29,6 @@ pub mod prelude {
     pub use crate::creatures::{
         components::{CreatureActions, CreatureSheet},
         creature_builder::{AppendageEffect, MorphologyBuilder},
-        morphologies,
         Creature,
     };
 
@@ -45,11 +44,11 @@ pub mod prelude {
     pub use crate::errors::{SimutronError, SimutronResult};
 
     // Re-export map types
-    pub use crate::map::{
-        base_terrain::{BaseMap, Environments, Map, MapBuilder, Terrain, Tile},
-        forest::{Forest, ForestBuilder, ForestMaterial},
-    };
-
+    pub use crate::map::base_terrain::{BaseMap, Map, MapBuilder, Terrain, Tile};
+    // Re-export map types
+    pub use crate::map::environments::forest::{Forest, ForestBuilder, ForestMaterial};
+    // Re-export map types
+    pub use crate::map::environments::Environments;
     // Re-export props types
     pub use crate::props::components::{Prop, PropAction, PropEffect};
 }

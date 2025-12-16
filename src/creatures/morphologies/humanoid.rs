@@ -1,11 +1,8 @@
-use crate::creatures::creature_builder::Appendage;
+use crate::creatures::Appendage;
 use crate::prelude::MorphologyBuilder;
 
-pub fn build_humanoid_morphology() -> Appendage {
-    // First you create the root appendage.
+pub fn humanoid_corpus() -> Appendage {
     let mut humanoid = MorphologyBuilder::new("Torso");
-    // Then you add appendages to it.
-    // Each appendage has its own state and health value. More on that later.
     humanoid.add_appendage("Torso", "Left Arm");
     humanoid.add_appendage("Torso", "Right Arm");
     humanoid.add_appendage("Left Arm", "Left Hand");

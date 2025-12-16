@@ -4,7 +4,7 @@ use crate::ecs::component::Component;
 pub mod components;
 pub mod creature_builder;
 pub mod morphologies;
-mod systems;
+pub(crate) mod systems;
 
 /// Represents a character with a name and body structure
 /// A creature is an entity with a pre-defined set of components.

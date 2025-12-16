@@ -1,2 +1,3 @@
 pub mod base_terrain;
-pub mod forest;
+pub(crate) mod environments;
+mod maneuverability;

@@ -1,4 +1,4 @@
-use simutron::creatures::morphologies::human::build_humanoid_morphology;
+use simutron::creatures::morphologies::humanoid::humanoid_corpus;
 use simutron::prelude::*;
 
 #[test]
@@ -8,7 +8,7 @@ fn test_movement() {
 
     let alice = Creature {
         name: "Alice".to_string(),
-        corpus: build_humanoid_morphology(),
+        corpus: humanoid_corpus(),
     };
 
     let mut forest_map = ForestBuilder::new(5, 5, 5, Tile::new(ForestMaterial::Soil));
